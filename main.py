@@ -1,12 +1,19 @@
 import pygame
 import generate_vectors
 
+#number of samples and image to sample from
+points = generate_vectors.read_svg("fourier.svg", 10000)
+#number of vector pairs
+coefficients = generate_vectors.get_coefficients(points, 1000)
+vectors = generate_vectors.get_vectors(coefficients)
+trail = []
+
 pygame.init()
 SCREEN = {
-    "width":1280,
-    "height":720,
-    "half-width":1280/2,
-    "half-height":720/2
+    "width":1920,
+    "height":1080,
+    "half-width":1920/2,
+    "half-height":1080/2
     }
 screen = pygame.display.set_mode((SCREEN["width"],SCREEN["height"]))
 running = True
@@ -22,18 +29,23 @@ def convert_coordinates(c):
     y = -c.imag + SCREEN["half-height"]
     return (x,y)
 
-#1000 samples from pi.svg
-points = generate_vectors.read_svg("pi.svg", 1000)
-#100 pairs of vectors
-coefficients = generate_vectors.get_coefficients(points, 100)
-vectors = generate_vectors.get_vectors(coefficients)
-trail = []
-
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+
+    #draw and rotate vectors
+    for i in range(len(vectors)):
+        pygame.draw.aaline(screen, 
+                           "white", 
+                           convert_coordinates(vectors[i].tail), 
+                           convert_coordinates(vectors[i].head))
+        vectors[i].rotate(dt)
+        coefficients[i] = (vectors[i].frequency, vectors[i].vec)
     
+    #reattach rotated vectors
+    vectors = generate_vectors.get_vectors(coefficients)
+
     #draw trail at end of last vector
     trail.append((vectors[len(vectors) - 1].head, 255))
     for i in range(len(trail)):
@@ -49,17 +61,6 @@ while running:
     
     #remove faded points
     trail = [point for point in trail if point[1] > 0]
-
-    #draw and rotate vectors
-    for i in range(len(vectors)):
-        pygame.draw.aaline(screen, 
-                           "white", 
-                           convert_coordinates(vectors[i].tail), 
-                           convert_coordinates(vectors[i].head))
-        vectors[i].rotate(dt)
-        coefficients[i] = (vectors[i].frequency, vectors[i].vec)
-    
-    vectors = generate_vectors.get_vectors(coefficients)
 
     pygame.display.flip()
     screen.fill("black")

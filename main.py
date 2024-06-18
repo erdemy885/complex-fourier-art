@@ -10,12 +10,16 @@ trail = []
 
 pygame.init()
 SCREEN = {
-    "width":1920,
-    "height":1080,
-    "half-width":1920/2,
-    "half-height":1080/2
+    "width":3840,
+    "height":1440,
+    "half-width":3840/2,
+    "half-height":1440/2
     }
+#create surface for trail with per pixel alphas
+trail_surface = pygame.Surface((SCREEN["width"],SCREEN["height"]), pygame.SRCALPHA)
+trail_surface.fill((0, 0, 0, 0))
 screen = pygame.display.set_mode((SCREEN["width"],SCREEN["height"]))
+screen.fill("black")
 running = True
 clock = pygame.time.Clock()
 
@@ -51,8 +55,9 @@ while running:
     for i in range(len(trail)):
         pos, alpha = trail[i]
         if i > 0:
-            color = (round(alpha), round(alpha), 0)
-            pygame.draw.aaline(screen, 
+            color = pygame.Color("yellow")
+            color.a = round(alpha)
+            pygame.draw.aaline(trail_surface, 
                                color, 
                                convert_coordinates(pos), 
                                convert_coordinates(trail[i-1][0]))
@@ -62,8 +67,15 @@ while running:
     #remove faded points
     trail = [point for point in trail if point[1] > 0]
 
+    #draw trail_surface onto screen
+    screen.blit(trail_surface, (0, 0))
+
+    #update screen surface then clear it
+    #not clearing trail_surface lets lines build up giving added thickness while maintainig antialiasing
+    #usually you can't adjust thickness on antialiased lines, only on regular lines
     pygame.display.flip()
     screen.fill("black")
+    # trail_surface.fill((0, 0, 0, 0))
     dt = clock.tick()/1000 * speed/100
 
 pygame.quit()
